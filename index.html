@@ -1,204 +1,187 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Apartament" />
-  <meta name="theme-color" content="#1A3A5C" />
-  <title>Admin Apartament</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Apartament"/>
+  <meta name="theme-color" content="#0f172a"/>
+  <title>Admin Apartament 4</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <style>
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { margin: 0; padding: 0; font-family: -apple-system, 'Inter', 'Segoe UI', sans-serif; background: #EFF6FF; }
-    input[type=number],input[type=text] { -moz-appearance: textfield; font-family: inherit; }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    html,body{margin:0;padding:0;background:#0f172a;font-family:-apple-system,'Inter','Segoe UI',sans-serif;}
+    input[type=number]{-moz-appearance:textfield;}
     input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    button { -webkit-appearance: none; font-family: inherit; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner { width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-    .pulse { animation: pulse 1.5s infinite; }
+    input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+    button,select,input{-webkit-appearance:none;font-family:inherit;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .pulse{animation:pulse 1.5s infinite;}
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:#1e293b;}
+    ::-webkit-scrollbar-thumb{background:#334155;border-radius:4px;}
   </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useRef } = React;
+const {useState,useEffect,useRef}=React;
 
-const SUPABASE_URL = "https://nivbwjpkchxbqtndshae.supabase.co";
-const SUPABASE_KEY = "sb_publishable_LL4x1Gnyfm_wvTK44M1X3Q_tlYVX9uW";
-const HEADERS = { "Content-Type":"application/json", "apikey":SUPABASE_KEY, "Authorization":`Bearer ${SUPABASE_KEY}` };
+const SUPABASE_URL="https://nivbwjpkchxbqtndshae.supabase.co";
+const SUPABASE_KEY="sb_publishable_LL4x1Gnyfm_wvTK44M1X3Q_tlYVX9uW";
+const H={"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`};
 
-const LUNI = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
-const LUNI_FULL = ["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie","Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
-const currentYear = new Date().getFullYear();
-const currentMonth = new Date().getMonth();
+const LUNI=["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
+const LUNI_FULL=["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie","Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
+const CY=new Date().getFullYear();
+const CM=new Date().getMonth();
 
-// ── Supabase ──────────────────────────────────────────────────
-async function dbLoad(table) {
-  const order = table === "citiri" ? "an.asc,luna_index.asc,data.asc" : "an.asc,luna_index.asc";
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&order=${order}`, { headers: HEADERS });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+// Dark theme tokens
+const D={
+  bg:"#0f172a", card:"#1e293b", card2:"#263347", border:"#334155",
+  text:"#f1f5f9", muted:"#94a3b8", sub:"#64748b",
+  blue:"#3b82f6", green:"#22c55e", red:"#ef4444",
+  header:"linear-gradient(90deg,#1e3a5f,#1d4ed8)"
+};
+
+async function dbLoad(table){
+  const o=table==="citiri"?"an.asc,luna_index.asc,data.asc":"an.asc,luna_index.asc";
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&order=${o}`,{headers:H});
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
 }
-async function dbInsert(table, row) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-    method:"POST", headers:{...HEADERS,"Prefer":"return=representation"}, body:JSON.stringify(row)
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return (await res.json())[0];
+async function dbInsert(table,row){
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}`,{method:"POST",headers:{...H,"Prefer":"return=representation"},body:JSON.stringify(row)});
+  if(!r.ok)throw new Error(await r.text());
+  return(await r.json())[0];
 }
-async function dbDelete(table, id) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method:"DELETE", headers:HEADERS });
-  if (!res.ok) throw new Error(await res.text());
+async function dbDelete(table,id){
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`,{method:"DELETE",headers:H});
+  if(!r.ok)throw new Error(await r.text());
 }
+function calcConsum(e){return(parseFloat(e.bucatarie_nou)-parseFloat(e.bucatarie_vechi))+(parseFloat(e.baie_nou)-parseFloat(e.baie_vechi));}
+function DropIcon(){return React.createElement("svg",{width:14,height:18,viewBox:"0 0 18 22",fill:"none"},React.createElement("path",{d:"M9 2C9 2 2 9.5 2 14a7 7 0 0 0 14 0C16 9.5 9 2 9 2Z",fill:"currentColor",opacity:"0.9"}));}
 
-// ── Claude Vision API ─────────────────────────────────────────
-async function scanFactura(base64Image, mediaType) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
-      messages:[{
-        role:"user",
-        content:[
-          { type:"image", source:{ type:"base64", media_type: mediaType, data: base64Image } },
-          { type:"text", text:`Acesta este un tabel de cheltuieli comune pentru un bloc de apartamente din România.
-Caută rândul pentru apartamentul 4 (Ap. 4) sau numele FLORESCU.
-Extrage DOAR:
-1. Luna și anul din titlul tabelului (ex: APRILIE 2026)
-2. Totalul de plată pentru Ap. 4 (coloana TOTAL DE PLATA, ultimul număr din rândul ap. 4)
-
-Răspunde DOAR în format JSON, fără alte texte:
-{"luna": "Aprilie", "luna_index": 3, "an": 2026, "total_plata": 322}
-
-luna_index este 0=Ian, 1=Feb, 2=Mar, 3=Apr, 4=Mai, 5=Iun, 6=Iul, 7=Aug, 8=Sep, 9=Oct, 10=Nov, 11=Dec` }
-        ]
-      }]
-    })
-  });
-  if (!res.ok) throw new Error(await res.text());
-  const data = await res.json();
-  const text = data.content.map(c => c.text||"").join("").replace(/```json|```/g,"").trim();
-  return JSON.parse(text);
-}
-
-// ── Utils ─────────────────────────────────────────────────────
-function calcConsum(e) {
-  return (parseFloat(e.bucatarie_nou)-parseFloat(e.bucatarie_vechi)) +
-         (parseFloat(e.baie_nou)-parseFloat(e.baie_vechi));
-}
-function getInitialForm(month, year) {
-  return { bucatarie_vechi:"", bucatarie_nou:"", baie_vechi:"", baie_nou:"",
-    luna:`${LUNI_FULL[month]} ${year}`, luna_index:month, an:year, data:"" };
-}
-function DropIcon() {
-  return React.createElement("svg",{width:16,height:20,viewBox:"0 0 18 22",fill:"none"},
-    React.createElement("path",{d:"M9 2C9 2 2 9.5 2 14a7 7 0 0 0 14 0C16 9.5 9 2 9 2Z",fill:"currentColor",opacity:"0.85"}));
-}
-
-// ── MonthPicker ───────────────────────────────────────────────
-function MonthPicker({ selectedMonth, selectedYear, onChange, history, historyKey }) {
-  const [year, setYear] = useState(selectedYear);
-  const savedKeys = new Set(history.map(e => `${e[historyKey||"luna_index"]}-${e.an}`));
-  return (
-    <div style={{background:"#fff",borderRadius:18,boxShadow:"0 4px 20px rgba(26,58,92,0.08)",padding:"18px 16px",marginBottom:20,border:"1px solid #E5ECF5"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-        <button onClick={()=>setYear(y=>y-1)} style={{background:"#EFF6FF",border:"none",borderRadius:8,width:36,height:36,cursor:"pointer",fontSize:20,color:"#1A3A5C",fontWeight:700}}>‹</button>
-        <span style={{fontWeight:800,fontSize:18,color:"#1A3A5C"}}>{year}</span>
-        <button onClick={()=>setYear(y=>y+1)} style={{background:"#EFF6FF",border:"none",borderRadius:8,width:36,height:36,cursor:"pointer",fontSize:20,color:"#1A3A5C",fontWeight:700}}>›</button>
+// ── MonthPicker ──────────────────────────────────────────────
+function MonthPicker({selectedMonth,selectedYear,onChange,history}){
+  const [year,setYear]=useState(selectedYear);
+  const saved=new Set(history.map(e=>`${e.luna_index}-${e.an}`));
+  return(
+    <div style={{background:D.card,borderRadius:18,padding:"16px 14px",marginBottom:18,border:`1px solid ${D.border}`}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        <button onClick={()=>setYear(y=>y-1)} style={{background:D.card2,border:"none",borderRadius:8,width:34,height:34,cursor:"pointer",fontSize:18,color:D.text,fontWeight:700}}>‹</button>
+        <span style={{fontWeight:800,fontSize:17,color:D.text}}>{year}</span>
+        <button onClick={()=>setYear(y=>y+1)} style={{background:D.card2,border:"none",borderRadius:8,width:34,height:34,cursor:"pointer",fontSize:18,color:D.text,fontWeight:700}}>›</button>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7}}>
-        {LUNI.map((luna,idx)=>{
-          const isSel=selectedMonth===idx&&selectedYear===year;
-          const isSaved=savedKeys.has(`${idx}-${year}`);
-          const isCur=idx===currentMonth&&year===currentYear;
-          return (
-            <button key={idx} onClick={()=>onChange(idx,year)} style={{
-              padding:"11px 4px",borderRadius:10,
-              border:isSel?"2px solid #2563EB":isCur?"2px solid #93C5FD":"2px solid transparent",
-              background:isSel?"linear-gradient(135deg,#2563EB,#1A3A5C)":isCur?"#EFF6FF":"#F8FAFF",
-              color:isSel?"#fff":"#1A3A5C",fontWeight:isSel?700:500,fontSize:13,cursor:"pointer",position:"relative",
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+        {LUNI.map((l,i)=>{
+          const isSel=selectedMonth===i&&selectedYear===year;
+          const isSaved=saved.has(`${i}-${year}`);
+          const isCur=i===CM&&year===CY;
+          return(
+            <button key={i} onClick={()=>onChange(i,year)} style={{
+              padding:"10px 4px",borderRadius:10,position:"relative",
+              border:isSel?`2px solid ${D.blue}`:isCur?`2px solid #3b82f655`:`2px solid transparent`,
+              background:isSel?"linear-gradient(135deg,#1d4ed8,#1e3a5f)":isCur?`${D.blue}18`:D.card2,
+              color:isSel?"#fff":D.text,fontWeight:isSel?700:500,fontSize:13,cursor:"pointer",
             }}>
-              {luna}
-              {isSaved&&<span style={{position:"absolute",top:3,right:5,width:6,height:6,borderRadius:"50%",background:isSel?"#fff":"#22C55E",display:"block"}}/>}
+              {l}
+              {isSaved&&<span style={{position:"absolute",top:3,right:5,width:5,height:5,borderRadius:"50%",background:isSel?"#fff":D.green,display:"block"}}/>}
             </button>
           );
         })}
       </div>
       <div style={{display:"flex",gap:14,marginTop:10}}>
-        <span style={{fontSize:11,color:"#9CA3AF",display:"flex",alignItems:"center",gap:4}}>
-          <span style={{width:7,height:7,borderRadius:"50%",background:"#22C55E",display:"inline-block"}}/> Salvat
-        </span>
-        <span style={{fontSize:11,color:"#9CA3AF",display:"flex",alignItems:"center",gap:4}}>
-          <span style={{display:"inline-block",width:12,height:12,borderRadius:3,border:"2px solid #93C5FD",background:"#EFF6FF"}}/> Luna curentă
-        </span>
+        <span style={{fontSize:11,color:D.sub,display:"flex",alignItems:"center",gap:4}}><span style={{width:6,height:6,borderRadius:"50%",background:D.green,display:"inline-block"}}/> Salvat</span>
+        <span style={{fontSize:11,color:D.sub,display:"flex",alignItems:"center",gap:4}}><span style={{display:"inline-block",width:11,height:11,borderRadius:3,border:`2px solid ${D.blue}55`,background:`${D.blue}18`}}/> Luna curentă</span>
       </div>
     </div>
   );
 }
 
-// ── WaterCard ─────────────────────────────────────────────────
-function WaterCard({ label, emoji, vechi, nou, onChangeNou, color }) {
-  const consum = nou !== "" && vechi !== "" ? (parseFloat(nou) - parseFloat(vechi)).toFixed(0) : null;
-  const consumOk = consum !== null && !isNaN(consum) && parseFloat(consum) >= 0;
-  const hasVechi = vechi !== "" && vechi !== null && vechi !== undefined;
-  return (
-    <div style={{background:"#fff",borderRadius:18,boxShadow:"0 4px 20px rgba(26,58,92,0.09)",padding:"20px 18px",flex:1,minWidth:140,border:`2px solid ${color}22`,position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",top:-16,right:-16,width:70,height:70,borderRadius:"50%",background:`${color}15`,pointerEvents:"none"}}/>
+// ── WaterCard ────────────────────────────────────────────────
+function WaterCard({label,emoji,vechi,nou,onChangeNou,color}){
+  const consum=nou!==""&&vechi!==""?(parseFloat(nou)-parseFloat(vechi)).toFixed(0):null;
+  const consumOk=consum!==null&&!isNaN(consum)&&parseFloat(consum)>=0;
+  const hasVechi=vechi!==""&&vechi!==null&&vechi!==undefined;
+  return(
+    <div style={{background:D.card,borderRadius:18,padding:"18px 16px",flex:1,minWidth:140,border:`1px solid ${D.border}`,position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:-14,right:-14,width:60,height:60,borderRadius:"50%",background:`${color}18`,pointerEvents:"none"}}/>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-        <span style={{fontSize:24}}>{emoji}</span>
+        <span style={{fontSize:22}}>{emoji}</span>
         <div>
-          <div style={{fontWeight:700,fontSize:15,color:"#1A3A5C"}}>{label}</div>
-          <div style={{fontSize:11,color:"#6B7280"}}>Index contor apă</div>
+          <div style={{fontWeight:700,fontSize:14,color:D.text}}>{label}</div>
+          <div style={{fontSize:11,color:D.sub}}>Index contor</div>
         </div>
       </div>
-
-      {/* Index vechi - readonly, din ultima citire */}
-      <div style={{marginBottom:10,background:"#F8FAFF",borderRadius:10,padding:"10px 12px",border:"1px solid #E5ECF5"}}>
-        <div style={{fontSize:11,fontWeight:600,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:4}}>Index vechi (m³)</div>
-        {hasVechi ? (
-          <div style={{fontSize:20,fontWeight:700,color:"#1A3A5C",fontVariantNumeric:"tabular-nums"}}>{parseInt(parseFloat(vechi))}</div>
-        ) : (
-          <div style={{fontSize:13,color:"#C4B5A0",fontStyle:"italic"}}>Prima citire</div>
+      <div style={{marginBottom:10,background:D.card2,borderRadius:10,padding:"10px 12px",border:`1px solid ${D.border}`}}>
+        <div style={{fontSize:10,fontWeight:600,color:D.sub,textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:4}}>Index vechi</div>
+        {hasVechi?(
+          <div style={{fontSize:20,fontWeight:700,color:D.muted,fontVariantNumeric:"tabular-nums"}}>{parseInt(parseFloat(vechi))}</div>
+        ):(
+          <div style={{fontSize:12,color:D.sub,fontStyle:"italic"}}>Prima citire</div>
         )}
       </div>
-
-      {/* Index nou - singurul câmp de introdus */}
       <label style={{display:"flex",flexDirection:"column",gap:4}}>
-        <span style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.4px"}}>Index nou (m³)</span>
-        <input type="number" step="0.001" min="0" placeholder="ex: 125"
-          value={nou}
-          onChange={e=>onChangeNou(e.target.value)}
-          style={{border:`1.5px solid ${color}66`,borderRadius:10,padding:"12px 12px",fontSize:20,color:"#1A3A5C",outline:"none",fontVariantNumeric:"tabular-nums",background:"#FAFAFA",width:"100%",fontWeight:700}}
+        <span style={{fontSize:10,fontWeight:600,color:D.sub,textTransform:"uppercase",letterSpacing:"0.4px"}}>Index nou</span>
+        <input type="number" step="1" min="0" placeholder="ex: 125" value={nou} onChange={e=>onChangeNou(e.target.value)}
+          style={{border:`1.5px solid ${color}66`,borderRadius:10,padding:"11px 12px",fontSize:20,color:D.text,outline:"none",fontVariantNumeric:"tabular-nums",background:D.card2,width:"100%",fontWeight:700}}
           onFocus={e=>e.target.style.border=`2px solid ${color}`}
           onBlur={e=>e.target.style.border=`1.5px solid ${color}66`}
         />
       </label>
-
-      {consumOk && (
-        <div style={{marginTop:12,background:`${color}12`,borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",border:`1px solid ${color}25`}}>
+      {consumOk&&(
+        <div style={{marginTop:10,background:`${color}18`,borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",border:`1px solid ${color}30`}}>
           <div style={{display:"flex",alignItems:"center",gap:6,color}}><DropIcon/><span style={{fontSize:12,fontWeight:600}}>Consum</span></div>
-          <span style={{fontSize:20,fontWeight:800,color,fontVariantNumeric:"tabular-nums"}}>{consum} <span style={{fontSize:12,fontWeight:500}}>m³</span></span>
+          <span style={{fontSize:18,fontWeight:800,color,fontVariantNumeric:"tabular-nums"}}>{consum} <span style={{fontSize:11,fontWeight:500}}>m³</span></span>
         </div>
       )}
-      {consum !== null && !isNaN(consum) && parseFloat(consum) < 0 && (
-        <div style={{marginTop:10,color:"#EF4444",fontSize:12,background:"#FEE2E2",borderRadius:8,padding:"7px 10px"}}>⚠️ Indexul nou trebuie să fie mai mare decât {parseFloat(vechi).toFixed(0)}.</div>
+      {consum!==null&&!isNaN(consum)&&parseFloat(consum)<0&&(
+        <div style={{marginTop:8,color:D.red,fontSize:12,background:"#ef444420",borderRadius:8,padding:"7px 10px"}}>⚠️ Trebuie mai mare decât {parseInt(parseFloat(vechi))}.</div>
       )}
     </div>
   );
 }
 
-// ── Tab Apă ───────────────────────────────────────────────────
-function TabApa({ citiri, setCitiri }) {
-  const [selMonth,setSelMonth]=useState(currentMonth);
-  const [selYear,setSelYear]=useState(currentYear);
+// ── Grafic Facturi ───────────────────────────────────────────
+function GraficFacturi({facturi}){
+  if(facturi.length===0)return null;
+  const maxVal=Math.max(...facturi.map(f=>parseFloat(f.total_plata)));
+  const last12=facturi.slice(-12);
+  return(
+    <div style={{background:D.card,borderRadius:18,padding:"18px 16px",marginBottom:16,border:`1px solid ${D.border}`}}>
+      <div style={{fontWeight:700,color:D.text,fontSize:14,marginBottom:16}}>📊 Evoluție plăți lunare</div>
+      <div style={{display:"flex",alignItems:"flex-end",gap:6,height:120}}>
+        {last12.map((f,i)=>{
+          const h=Math.max(8,Math.round((parseFloat(f.total_plata)/maxVal)*110));
+          const isLast=i===last12.length-1;
+          return(
+            <div key={f.id} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+              <div style={{fontSize:9,color:D.sub,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{parseFloat(f.total_plata).toFixed(0)}</div>
+              <div style={{width:"100%",height:h,borderRadius:"6px 6px 3px 3px",background:isLast?"linear-gradient(180deg,#22c55e,#16a34a)":"linear-gradient(180deg,#3b82f6,#1d4ed8)",transition:"height 0.3s"}}/>
+              <div style={{fontSize:9,color:D.sub,textAlign:"center",lineHeight:1.2}}>{f.luna.split(" ")[0]}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:10,paddingTop:10,borderTop:`1px solid ${D.border}`}}>
+        <span style={{fontSize:11,color:D.sub}}>Min: <b style={{color:D.text}}>{Math.min(...facturi.map(f=>parseFloat(f.total_plata))).toFixed(0)} lei</b></span>
+        <span style={{fontSize:11,color:D.sub}}>Max: <b style={{color:D.text}}>{maxVal.toFixed(0)} lei</b></span>
+        <span style={{fontSize:11,color:D.sub}}>Med: <b style={{color:D.text}}>{(facturi.reduce((a,f)=>a+parseFloat(f.total_plata),0)/facturi.length).toFixed(0)} lei</b></span>
+      </div>
+    </div>
+  );
+}
+
+// ── Tab Apă ──────────────────────────────────────────────────
+function TabApa({citiri,setCitiri}){
+  const [selMonth,setSelMonth]=useState(CM);
+  const [selYear,setSelYear]=useState(CY);
   const [bucNou,setBucNou]=useState("");
   const [baieNou,setBaieNou]=useState("");
   const [saving,setSaving]=useState(false);
@@ -207,83 +190,76 @@ function TabApa({ citiri, setCitiri }) {
   const [deletingId,setDeletingId]=useState(null);
   const [view,setView]=useState("introduce");
 
-  // Ultimul index salvat pentru fiecare contor
-  const lastBuc  = citiri.length > 0 ? String(citiri[citiri.length-1].bucatarie_nou) : "";
-  const lastBaie = citiri.length > 0 ? String(citiri[citiri.length-1].baie_nou) : "";
+  const lastBuc=citiri.length>0?String(citiri[citiri.length-1].bucatarie_nou):"";
+  const lastBaie=citiri.length>0?String(citiri[citiri.length-1].baie_nou):"";
 
-  const handleMonthChange=(month,year)=>{
-    setSelMonth(month); setSelYear(year);
-    setBucNou(""); setBaieNou("");
+  const handleMonthChange=(m,y)=>{setSelMonth(m);setSelYear(y);setBucNou("");setBaieNou("");};
+  const consumBuc=bucNou!==""&&lastBuc!==""?parseFloat(bucNou)-parseFloat(lastBuc):null;
+  const consumBaie=baieNou!==""&&lastBaie!==""?parseFloat(baieNou)-parseFloat(lastBaie):null;
+  const totalConsum=consumBuc!==null&&consumBaie!==null&&consumBuc>=0&&consumBaie>=0?(consumBuc+consumBaie).toFixed(0):null;
+  const canSave=totalConsum!==null&&!saving;
+
+  const handleSave=async()=>{
+    if(!canSave)return;
+    setSaving(true);setError(null);
+    try{
+      const luna=`${LUNI_FULL[selMonth]} ${selYear}`;
+      const row={data:luna,luna,luna_index:selMonth,an:selYear,bucatarie_vechi:parseFloat(lastBuc)||0,bucatarie_nou:parseFloat(bucNou),baie_vechi:parseFloat(lastBaie)||0,baie_nou:parseFloat(baieNou)};
+      const r=await dbInsert("citiri",row);
+      setCitiri(h=>[...h,r].sort((a,b)=>a.an-b.an||a.luna_index-b.luna_index));
+      setSaved(true);setTimeout(()=>setSaved(false),2500);
+      setBucNou("");setBaieNou("");
+    }catch(e){setError("Eroare la salvare.");}
+    finally{setSaving(false);}
   };
-  const consumBuc  = bucNou !== "" && lastBuc  !== "" ? parseFloat(bucNou)  - parseFloat(lastBuc)  : null;
-  const consumBaie = baieNou !== "" && lastBaie !== "" ? parseFloat(baieNou) - parseFloat(lastBaie) : null;
-  const totalConsum = consumBuc !== null && consumBaie !== null && consumBuc >= 0 && consumBaie >= 0 ? (consumBuc + consumBaie).toFixed(0) : null;
-  const canSave = totalConsum !== null && !saving;
-
-  const handleSave = async () => {
-    if (!canSave) return;
-    setSaving(true); setError(null);
-    try {
-      const luna = `${LUNI_FULL[selMonth]} ${selYear}`;
-      const row = { data:luna, luna, luna_index:selMonth, an:selYear,
-        bucatarie_vechi: parseFloat(lastBuc)||0, bucatarie_nou: parseFloat(bucNou),
-        baie_vechi: parseFloat(lastBaie)||0, baie_nou: parseFloat(baieNou) };
-      const saved_row = await dbInsert("citiri", row);
-      setCitiri(h => [...h, saved_row].sort((a,b) => a.an-b.an||a.luna_index-b.luna_index));
-      setSaved(true); setTimeout(()=>setSaved(false), 2500);
-      setBucNou(""); setBaieNou("");
-    } catch(e) { setError("Eroare la salvare."); }
-    finally { setSaving(false); }
-  };
-
-  const handleDelete = async (id) => {
+  const handleDelete=async(id)=>{
     setDeletingId(id);
-    try { await dbDelete("citiri",id); setCitiri(h=>h.filter(e=>e.id!==id)); }
-    catch(e) { setError("Eroare la ștergere."); }
-    finally { setDeletingId(null); }
+    try{await dbDelete("citiri",id);setCitiri(h=>h.filter(e=>e.id!==id));}
+    catch(e){setError("Eroare la ștergere.");}
+    finally{setDeletingId(null);}
   };
 
-  const totalCum = citiri.reduce((acc,e)=>acc+calcConsum(e),0);
-  const avg = citiri.length>0 ? totalCum/citiri.length : 0;
+  const totalCum=citiri.reduce((acc,e)=>acc+calcConsum(e),0);
+  const avg=citiri.length>0?totalCum/citiri.length:0;
   let running=0;
-  const withCumul = citiri.map(e=>{running+=calcConsum(e);return{...e,cumulative:running};});
+  const withCumul=citiri.map(e=>{running+=calcConsum(e);return{...e,cumulative:running};});
 
-  return (
+  return(
     <div>
-      <div style={{display:"flex",gap:8,marginBottom:20}}>
+      <div style={{display:"flex",gap:8,marginBottom:18}}>
         {["introduce","istoric"].map(v=>(
-          <button key={v} onClick={()=>setView(v)} style={{flex:1,padding:"10px",borderRadius:12,border:"none",background:view===v?"#1A3A5C":"#E5ECF5",color:view===v?"#fff":"#6B7280",fontWeight:600,fontSize:13,cursor:"pointer"}}>
+          <button key={v} onClick={()=>setView(v)} style={{flex:1,padding:"10px",borderRadius:12,border:"none",background:view===v?D.blue:D.card,color:view===v?"#fff":D.muted,fontWeight:600,fontSize:13,cursor:"pointer"}}>
             {v==="introduce"?"✏️ Introduce":"📋 Istoric"}
           </button>
         ))}
       </div>
-      {error&&<div style={{background:"#FEE2E2",color:"#991B1B",padding:"10px 14px",fontSize:13,borderRadius:10,marginBottom:14,fontWeight:600}}>⚠️ {error}</div>}
+      {error&&<div style={{background:"#ef444420",color:"#fca5a5",padding:"10px 14px",fontSize:13,borderRadius:10,marginBottom:14,fontWeight:600}}>⚠️ {error}</div>}
 
       {view==="introduce"&&(
         <div>
-          <div style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>📅 Selectează luna</div>
-          <MonthPicker selectedMonth={selMonth} selectedYear={selYear} onChange={handleMonthChange} history={citiri} historyKey="luna_index"/>
-          <div style={{background:"linear-gradient(90deg,#EFF6FF,#DBEAFE)",border:"1.5px solid #BFDBFE",borderRadius:12,padding:"10px 14px",marginBottom:16,color:"#1A3A5C",fontWeight:700,fontSize:14}}>
+          <div style={{fontSize:10,fontWeight:600,color:D.sub,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>📅 Selectează luna</div>
+          <MonthPicker selectedMonth={selMonth} selectedYear={selYear} onChange={handleMonthChange} history={citiri}/>
+          <div style={{background:`${D.blue}18`,border:`1px solid ${D.blue}44`,borderRadius:12,padding:"9px 14px",marginBottom:14,color:D.blue,fontWeight:700,fontSize:13}}>
             📌 {LUNI_FULL[selMonth]} {selYear}
           </div>
-          <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:16}}>
-            <WaterCard label="Bucătărie" emoji="🍽️" color="#4A9CC4" vechi={lastBuc} nou={bucNou} onChangeNou={v=>setBucNou(v)}/>
-            <WaterCard label="Baie" emoji="🛁" color="#22C55E" vechi={lastBaie} nou={baieNou} onChangeNou={v=>setBaieNou(v)}/>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:14}}>
+            <WaterCard label="Bucătărie" emoji="🍽️" color="#3b82f6" vechi={lastBuc} nou={bucNou} onChangeNou={v=>setBucNou(v)}/>
+            <WaterCard label="Baie" emoji="🛁" color="#22c55e" vechi={lastBaie} nou={baieNou} onChangeNou={v=>setBaieNou(v)}/>
           </div>
           {totalConsum&&(
-            <div style={{background:"linear-gradient(90deg,#1A3A5C,#2563EB)",borderRadius:14,padding:"16px 20px",color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,marginBottom:14}}>
+            <div style={{background:"linear-gradient(90deg,#1e3a5f,#1d4ed8)",borderRadius:14,padding:"14px 18px",color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,marginBottom:12}}>
               <div>
-                <div style={{fontSize:12,opacity:0.7,marginBottom:2}}>Consum total citire</div>
-                <div style={{fontSize:28,fontWeight:900,fontVariantNumeric:"tabular-nums"}}>{totalConsum} <span style={{fontSize:14,fontWeight:500}}>m³</span></div>
+                <div style={{fontSize:11,opacity:0.7,marginBottom:2}}>Consum total citire</div>
+                <div style={{fontSize:26,fontWeight:900,fontVariantNumeric:"tabular-nums"}}>{totalConsum} <span style={{fontSize:13,fontWeight:500}}>m³</span></div>
               </div>
               <div style={{display:"flex",gap:14}}>
-                <div style={{textAlign:"center"}}><div style={{fontSize:10,opacity:0.65}}>🍽️ Buc.</div><div style={{fontWeight:700,fontSize:16}}>{consumBuc.toFixed(0)}</div></div>
+                <div style={{textAlign:"center"}}><div style={{fontSize:10,opacity:0.65}}>🍽️ Buc.</div><div style={{fontWeight:700,fontSize:15}}>{consumBuc.toFixed(0)}</div></div>
                 <div style={{width:1,background:"rgba(255,255,255,0.2)"}}/>
-                <div style={{textAlign:"center"}}><div style={{fontSize:10,opacity:0.65}}>🛁 Baie</div><div style={{fontWeight:700,fontSize:16}}>{consumBaie.toFixed(0)}</div></div>
+                <div style={{textAlign:"center"}}><div style={{fontSize:10,opacity:0.65}}>🛁 Baie</div><div style={{fontWeight:700,fontSize:15}}>{consumBaie.toFixed(0)}</div></div>
               </div>
             </div>
           )}
-          <button onClick={handleSave} disabled={!canSave} style={{width:"100%",padding:"15px",borderRadius:14,border:"none",background:canSave?"linear-gradient(90deg,#22C55E,#16A34A)":"#D1D5DB",color:"#fff",fontSize:16,fontWeight:700,cursor:canSave?"pointer":"not-allowed",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <button onClick={handleSave} disabled={!canSave} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:canSave?"linear-gradient(90deg,#22c55e,#16a34a)":D.card,color:canSave?"#fff":D.sub,fontSize:15,fontWeight:700,cursor:canSave?"pointer":"not-allowed",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
             {saving?<div className="spinner"/>:saved?"✅ Salvat!":"💾 Salvează în Baza de Date"}
           </button>
         </div>
@@ -291,55 +267,55 @@ function TabApa({ citiri, setCitiri }) {
 
       {view==="istoric"&&(
         <div>
-          <div style={{background:"linear-gradient(135deg,#1A3A5C,#2563EB)",borderRadius:18,padding:"20px",marginBottom:14,color:"#fff",boxShadow:"0 6px 24px rgba(37,99,235,0.22)"}}>
-            <div style={{fontSize:11,opacity:0.7,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>💧 Total apă consumată</div>
-            <div style={{fontSize:38,fontWeight:900,lineHeight:1}}>{totalCum.toFixed(0)}<span style={{fontSize:16,fontWeight:500,marginLeft:5}}>m³</span></div>
-            <div style={{fontSize:12,opacity:0.6,marginTop:4,marginBottom:14}}>din {citiri.length} citiri</div>
-            <div style={{display:"flex",gap:10}}>
-              <div style={{flex:1,background:"rgba(255,255,255,0.12)",borderRadius:10,padding:"10px",textAlign:"center"}}>
+          <div style={{background:"linear-gradient(135deg,#1e3a5f,#1d4ed8)",borderRadius:18,padding:"18px",marginBottom:12,color:"#fff"}}>
+            <div style={{fontSize:10,opacity:0.7,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>💧 Total apă consumată</div>
+            <div style={{fontSize:36,fontWeight:900,lineHeight:1}}>{totalCum.toFixed(0)}<span style={{fontSize:15,fontWeight:500,marginLeft:5}}>m³</span></div>
+            <div style={{fontSize:11,opacity:0.6,marginTop:4,marginBottom:12}}>din {citiri.length} citiri</div>
+            <div style={{display:"flex",gap:8}}>
+              <div style={{flex:1,background:"rgba(255,255,255,0.1)",borderRadius:10,padding:"9px",textAlign:"center"}}>
                 <div style={{fontSize:10,opacity:0.7}}>Medie / citire</div>
-                <div style={{fontSize:18,fontWeight:800}}>{avg.toFixed(1)} m³</div>
+                <div style={{fontSize:17,fontWeight:800}}>{avg.toFixed(1)} m³</div>
               </div>
-              <div style={{flex:1,background:"rgba(255,255,255,0.12)",borderRadius:10,padding:"10px",textAlign:"center"}}>
+              <div style={{flex:1,background:"rgba(255,255,255,0.1)",borderRadius:10,padding:"9px",textAlign:"center"}}>
                 <div style={{fontSize:10,opacity:0.7}}>Ultima citire</div>
-                <div style={{fontSize:18,fontWeight:800}}>{citiri.length>0?calcConsum(citiri[citiri.length-1]).toFixed(0)+" m³":"-"}</div>
+                <div style={{fontSize:17,fontWeight:800}}>{citiri.length>0?calcConsum(citiri[citiri.length-1]).toFixed(0)+" m³":"-"}</div>
               </div>
             </div>
           </div>
-          <div style={{display:"flex",gap:10,marginBottom:16}}>
-            {[{label:"🍽️ Bucătărie",color:"#4A9CC4",val:citiri.reduce((a,e)=>a+(parseFloat(e.bucatarie_nou)-parseFloat(e.bucatarie_vechi)),0)},{label:"🛁 Baie",color:"#22C55E",val:citiri.reduce((a,e)=>a+(parseFloat(e.baie_nou)-parseFloat(e.baie_vechi)),0)}].map(({label,color,val})=>(
-              <div key={label} style={{flex:1,background:"#fff",borderRadius:14,padding:"12px 14px",border:`2px solid ${color}22`,textAlign:"center"}}>
-                <div style={{fontSize:12,color:"#6B7280",marginBottom:3}}>{label}</div>
-                <div style={{fontSize:24,fontWeight:800,color}}>{val.toFixed(0)} <span style={{fontSize:12,fontWeight:500}}>m³</span></div>
-                <div style={{fontSize:11,color:"#9CA3AF",marginTop:2}}>{totalCum>0?((val/totalCum)*100).toFixed(0):0}% din total</div>
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            {[{label:"🍽️ Bucătărie",color:"#3b82f6",val:citiri.reduce((a,e)=>a+(parseFloat(e.bucatarie_nou)-parseFloat(e.bucatarie_vechi)),0)},{label:"🛁 Baie",color:"#22c55e",val:citiri.reduce((a,e)=>a+(parseFloat(e.baie_nou)-parseFloat(e.baie_vechi)),0)}].map(({label,color,val})=>(
+              <div key={label} style={{flex:1,background:D.card,borderRadius:14,padding:"12px",border:`1px solid ${D.border}`,textAlign:"center"}}>
+                <div style={{fontSize:11,color:D.sub,marginBottom:3}}>{label}</div>
+                <div style={{fontSize:22,fontWeight:800,color}}>{val.toFixed(0)} <span style={{fontSize:11,fontWeight:500,color:D.sub}}>m³</span></div>
+                <div style={{fontSize:10,color:D.sub,marginTop:2}}>{totalCum>0?((val/totalCum)*100).toFixed(0):0}%</div>
               </div>
             ))}
           </div>
           {withCumul.length===0?(
-            <div style={{textAlign:"center",padding:"40px 20px",color:"#9CA3AF",background:"#fff",borderRadius:16,border:"1.5px dashed #D1D5DB"}}>
-              <div style={{fontSize:40,marginBottom:8}}>💧</div>
-              <div style={{fontWeight:600}}>Nicio citire salvată</div>
+            <div style={{textAlign:"center",padding:"40px 20px",color:D.sub,background:D.card,borderRadius:16,border:`1px dashed ${D.border}`}}>
+              <div style={{fontSize:36,marginBottom:8}}>💧</div>
+              <div style={{fontWeight:600,color:D.muted}}>Nicio citire salvată</div>
             </div>
           ):withCumul.map(entry=>{
             const buc=parseFloat(entry.bucatarie_nou)-parseFloat(entry.bucatarie_vechi);
             const baie=parseFloat(entry.baie_nou)-parseFloat(entry.baie_vechi);
-            return (
-              <div key={entry.id} style={{borderRadius:14,background:"#F8FAFF",border:"1px solid #E5ECF5",marginBottom:10,overflow:"hidden",opacity:deletingId===entry.id?0.5:1}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,padding:"12px 14px 6px",flexWrap:"wrap"}}>
-                  <div style={{flex:"1 1 auto",fontWeight:700,color:"#1A3A5C",fontSize:13}}>📅 {entry.luna}</div>
-                  <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                    <span style={{fontSize:12,color:"#6B7280"}}>🍽️ <b style={{color:"#4A9CC4"}}>{buc.toFixed(0)} m³</b></span>
-                    <span style={{fontSize:12,color:"#6B7280"}}>🛁 <b style={{color:"#22C55E"}}>{baie.toFixed(0)} m³</b></span>
-                    <span style={{fontSize:12,background:"#1A3A5C",color:"#fff",borderRadius:7,padding:"2px 9px",fontWeight:700}}>{(buc+baie).toFixed(0)} m³</span>
+            return(
+              <div key={entry.id} style={{borderRadius:14,background:D.card,border:`1px solid ${D.border}`,marginBottom:8,overflow:"hidden",opacity:deletingId===entry.id?0.4:1}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px 5px",flexWrap:"wrap"}}>
+                  <div style={{flex:"1 1 auto",fontWeight:700,color:D.text,fontSize:13}}>📅 {entry.luna}</div>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <span style={{fontSize:12,color:D.sub}}>🍽️ <b style={{color:"#3b82f6"}}>{buc.toFixed(0)}</b></span>
+                    <span style={{fontSize:12,color:D.sub}}>🛁 <b style={{color:"#22c55e"}}>{baie.toFixed(0)}</b></span>
+                    <span style={{fontSize:12,background:D.blue,color:"#fff",borderRadius:6,padding:"2px 8px",fontWeight:700}}>{(buc+baie).toFixed(0)} m³</span>
                   </div>
-                  <button onClick={()=>handleDelete(entry.id)} style={{background:"none",border:"none",cursor:"pointer",color:"#D1D5DB",fontSize:17,padding:"2px 5px"}}>✕</button>
+                  <button onClick={()=>handleDelete(entry.id)} style={{background:"none",border:"none",cursor:"pointer",color:D.border,fontSize:16,padding:"2px 4px"}}>✕</button>
                 </div>
-                <div style={{padding:"4px 14px 10px",display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:10,color:"#9CA3AF",whiteSpace:"nowrap"}}>Cumulat:</span>
-                  <div style={{flex:1,background:"#E5ECF5",borderRadius:99,height:5}}>
-                    <div style={{height:"100%",borderRadius:99,background:"linear-gradient(90deg,#4A9CC4,#2563EB)",width:`${Math.min(100,(entry.cumulative/40)*100)}%`}}/>
+                <div style={{padding:"4px 14px 9px",display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:10,color:D.sub,whiteSpace:"nowrap"}}>Cumulat:</span>
+                  <div style={{flex:1,background:D.card2,borderRadius:99,height:4}}>
+                    <div style={{height:"100%",borderRadius:99,background:`linear-gradient(90deg,${D.blue},#60a5fa)`,width:`${Math.min(100,(entry.cumulative/40)*100)}%`}}/>
                   </div>
-                  <span style={{fontSize:11,fontWeight:700,color:"#2563EB",whiteSpace:"nowrap"}}>{entry.cumulative.toFixed(0)} m³</span>
+                  <span style={{fontSize:11,fontWeight:700,color:D.blue,whiteSpace:"nowrap"}}>{entry.cumulative.toFixed(0)} m³</span>
                 </div>
               </div>
             );
@@ -350,212 +326,115 @@ function TabApa({ citiri, setCitiri }) {
   );
 }
 
-// ── Tab Tabel ───────────────────────────────────────────────
-function TabFacturi({ facturi, setFacturi }) {
-  const fileRef=useRef();
-  const cameraRef=useRef();
-  const [scanning,setScanning]=useState(false);
-  const [scanResult,setScanResult]=useState(null);
+// ── Tab Tabel Admin ──────────────────────────────────────────
+function TabFacturi({facturi,setFacturi}){
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState(false);
   const [error,setError]=useState(null);
   const [deletingId,setDeletingId]=useState(null);
-  const [manualLuna,setManualLuna]=useState(LUNI_FULL[currentMonth]);
-  const [manualAn,setManualAn]=useState(String(currentYear));
-  const [manualTotal,setManualTotal]=useState("");
-  const [mode,setMode]=useState("scan"); // scan | manual | istoric
+  const [luna,setLuna]=useState(LUNI_FULL[CM]);
+  const [an,setAn]=useState(String(CY));
+  const [total,setTotal]=useState("");
+  const [view,setView]=useState("adauga");
 
-  const handleFile=async(file)=>{
-    if(!file)return;
-    setScanning(true);setError(null);setScanResult(null);
-    try {
-      const base64=await new Promise((res,rej)=>{
-        const r=new FileReader();
-        r.onload=()=>res(r.result.split(",")[1]);
-        r.onerror=()=>rej(new Error("Read failed"));
-        r.readAsDataURL(file);
-      });
-      const mediaType=file.type||"image/jpeg";
-
-      setScanResult(result);
-    } catch(e){ setError("Nu am putut citi tabelul. Încearcă o poză mai clară sau adaugă manual."); }
-    finally{ setScanning(false); }
-  };
-
-  const handleSaveScan=async()=>{
-    if(!scanResult)return;
+  const handleSave=async()=>{
+    if(!total||!luna||!an)return;
     setSaving(true);setError(null);
-    try {
-      const row={luna:`${scanResult.luna} ${scanResult.an}`,luna_index:scanResult.luna_index,an:scanResult.an,total_plata:scanResult.total_plata};
-      const saved_row=await dbInsert("facturi",row);
-      setFacturi(h=>[...h,saved_row].sort((a,b)=>a.an-b.an||a.luna_index-b.luna_index));
+    const lunaIdx=LUNI_FULL.findIndex(l=>l.toLowerCase()===luna.toLowerCase());
+    try{
+      const row={luna:`${luna} ${an}`,luna_index:lunaIdx>=0?lunaIdx:0,an:parseInt(an),total_plata:parseFloat(total)};
+      const r=await dbInsert("facturi",row);
+      setFacturi(h=>[...h,r].sort((a,b)=>a.an-b.an||a.luna_index-b.luna_index));
       setSaved(true);setTimeout(()=>setSaved(false),2500);
-      setScanResult(null);
-    } catch(e){ setError("Eroare la salvare."); }
-    finally{ setSaving(false); }
+      setTotal("");
+    }catch(e){setError("Eroare la salvare.");}
+    finally{setSaving(false);}
   };
-
-  const handleSaveManual=async()=>{
-    if(!manualTotal||!manualLuna||!manualAn)return;
-    setSaving(true);setError(null);
-    const lunaIdx=LUNI_FULL.findIndex(l=>l.toLowerCase()===manualLuna.toLowerCase());
-    try {
-      const row={luna:`${manualLuna} ${manualAn}`,luna_index:lunaIdx>=0?lunaIdx:0,an:parseInt(manualAn),total_plata:parseFloat(manualTotal)};
-      const saved_row=await dbInsert("facturi",row);
-      setFacturi(h=>[...h,saved_row].sort((a,b)=>a.an-b.an||a.luna_index-b.luna_index));
-      setSaved(true);setTimeout(()=>setSaved(false),2500);
-      setManualTotal("");
-    } catch(e){ setError("Eroare la salvare."); }
-    finally{ setSaving(false); }
-  };
-
   const handleDelete=async(id)=>{
     setDeletingId(id);
-    try{ await dbDelete("facturi",id); setFacturi(h=>h.filter(e=>e.id!==id)); }
-    catch(e){ setError("Eroare la ștergere."); }
-    finally{ setDeletingId(null); }
+    try{await dbDelete("facturi",id);setFacturi(h=>h.filter(e=>e.id!==id));}
+    catch(e){setError("Eroare la ștergere.");}
+    finally{setDeletingId(null);}
   };
 
-  const totalAnual=facturi.filter(f=>f.an===currentYear).reduce((a,f)=>a+parseFloat(f.total_plata),0);
+  const totalAnual=facturi.filter(f=>f.an===CY).reduce((a,f)=>a+parseFloat(f.total_plata),0);
   const totalGeneral=facturi.reduce((a,f)=>a+parseFloat(f.total_plata),0);
+  const canSave=total&&!saving;
 
-  return (
+  return(
     <div>
-      <div style={{display:"flex",gap:6,marginBottom:20}}>
-        {[["scan","📸 Scanează"],["manual","✏️ Manual"],["istoric","📋 Istoric"]].map(([v,lbl])=>(
-          <button key={v} onClick={()=>setMode(v)} style={{flex:1,padding:"9px 4px",borderRadius:12,border:"none",background:mode===v?"#1A3A5C":"#E5ECF5",color:mode===v?"#fff":"#6B7280",fontWeight:600,fontSize:12,cursor:"pointer"}}>
+      <div style={{display:"flex",gap:8,marginBottom:18}}>
+        {[["adauga","➕ Adaugă"],["istoric","📋 Istoric"]].map(([v,lbl])=>(
+          <button key={v} onClick={()=>setView(v)} style={{flex:1,padding:"10px",borderRadius:12,border:"none",background:view===v?D.blue:D.card,color:view===v?"#fff":D.muted,fontWeight:600,fontSize:13,cursor:"pointer"}}>
             {lbl}
           </button>
         ))}
       </div>
-      {error&&<div style={{background:"#FEE2E2",color:"#991B1B",padding:"10px 14px",fontSize:13,borderRadius:10,marginBottom:14,fontWeight:600}}>⚠️ {error}</div>}
+      {error&&<div style={{background:"#ef444420",color:"#fca5a5",padding:"10px 14px",fontSize:13,borderRadius:10,marginBottom:14,fontWeight:600}}>⚠️ {error}</div>}
 
-      {mode==="scan"&&(
-        <div>
-          <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
-          <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
-
-          {scanning?(
-            <div style={{background:"#fff",borderRadius:18,padding:"32px 20px",border:"2px dashed #BFDBFE",textAlign:"center",marginBottom:16}}>
-              <div style={{fontSize:40,marginBottom:10}} className="pulse">🔍</div>
-              <div style={{fontWeight:700,color:"#1A3A5C",marginBottom:4}}>Se analizează tabelul...</div>
-              <div style={{fontSize:13,color:"#6B7280"}}>Claude citește automat datele pentru Ap. 4</div>
-            </div>
-          ):(
-            <div style={{marginBottom:16}}>
-              <div style={{fontWeight:600,color:"#6B7280",fontSize:12,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:10}}>📷 Alege sursa imaginii</div>
-              <div style={{display:"flex",gap:12}}>
-                <button onClick={()=>cameraRef.current&&cameraRef.current.click()} style={{flex:1,background:"linear-gradient(135deg,#1A3A5C,#2563EB)",border:"none",borderRadius:16,padding:"20px 12px",color:"#fff",cursor:"pointer",textAlign:"center"}}>
-                  <div style={{fontSize:36,marginBottom:8}}>📸</div>
-                  <div style={{fontWeight:700,fontSize:14}}>Fă poză</div>
-                  <div style={{fontSize:11,opacity:0.75,marginTop:3}}>Deschide camera</div>
-                </button>
-                <button onClick={()=>fileRef.current&&fileRef.current.click()} style={{flex:1,background:"linear-gradient(135deg,#0F766E,#0D9488)",border:"none",borderRadius:16,padding:"20px 12px",color:"#fff",cursor:"pointer",textAlign:"center"}}>
-                  <div style={{fontSize:36,marginBottom:8}}>🖼️</div>
-                  <div style={{fontWeight:700,fontSize:14}}>Din galerie</div>
-                  <div style={{fontSize:11,opacity:0.75,marginTop:3}}>Alege o poză salvată</div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {scanResult&&(
-            <div style={{background:"#fff",borderRadius:16,padding:"20px",border:"2px solid #22C55E33",marginBottom:16}}>
-              <div style={{fontWeight:700,color:"#1A3A5C",marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:20}}>✅</span> Date citite pentru Ap. 4
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:"#F8FAFF",borderRadius:10}}>
-                  <span style={{fontSize:13,color:"#6B7280"}}>📅 Luna</span>
-                  <span style={{fontWeight:700,color:"#1A3A5C"}}>{scanResult.luna} {scanResult.an}</span>
-                </div>
-                <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:"#F0FDF4",borderRadius:10,border:"1px solid #22C55E33"}}>
-                  <span style={{fontSize:13,color:"#6B7280"}}>💰 Total de plată</span>
-                  <span style={{fontWeight:800,color:"#16A34A",fontSize:18}}>{scanResult.total_plata} lei</span>
-                </div>
-              </div>
-              <div style={{display:"flex",gap:10,marginTop:14}}>
-                <button onClick={()=>setScanResult(null)} style={{flex:1,padding:"12px",borderRadius:12,border:"1.5px solid #D1D5DB",background:"#fff",color:"#6B7280",fontWeight:600,cursor:"pointer",fontSize:14}}>
-                  ✕ Renunță
-                </button>
-                <button onClick={handleSaveScan} disabled={saving} style={{flex:2,padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(90deg,#22C55E,#16A34A)",color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  {saving?<div className="spinner"/>:saved?"✅ Salvat!":"💾 Salvează"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div style={{background:"#F8FAFF",borderRadius:12,padding:"12px 14px",border:"1px solid #E5ECF5"}}>
-            <div style={{fontSize:12,color:"#6B7280",fontWeight:600,marginBottom:6}}>💡 Sfaturi pentru o scanare bună:</div>
-            <div style={{fontSize:12,color:"#9CA3AF",lineHeight:1.7}}>
-              • Luminează bine tabelul<br/>
-              • Fotografiază drept, nu în unghi<br/>
-              • Asigură-te că rândul Ap. 4 e vizibil<br/>
-              • Dacă nu merge, folosește modul Manual
-            </div>
-          </div>
-        </div>
-      )}
-
-      {mode==="manual"&&(
-        <div style={{background:"#fff",borderRadius:18,padding:"22px 18px",border:"1px solid #E5ECF5"}}>
-          <div style={{fontWeight:700,color:"#1A3A5C",marginBottom:16,fontSize:15}}>✏️ Adaugă manual</div>
-          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      {view==="adauga"&&(
+        <div style={{background:D.card,borderRadius:18,padding:"20px 16px",border:`1px solid ${D.border}`}}>
+          <div style={{fontWeight:700,color:D.text,marginBottom:16,fontSize:15}}>🏢 Adaugă tabel administrație</div>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <label style={{display:"flex",flexDirection:"column",gap:5}}>
-              <span style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.4px"}}>Luna</span>
-              <select value={manualLuna} onChange={e=>setManualLuna(e.target.value)}
-                style={{border:"1.5px solid #D1D5DB",borderRadius:10,padding:"10px 12px",fontSize:15,color:"#1A3A5C",outline:"none",background:"#FAFAFA"}}>
+              <span style={{fontSize:10,fontWeight:600,color:D.sub,textTransform:"uppercase",letterSpacing:"0.4px"}}>Luna</span>
+              <select value={luna} onChange={e=>setLuna(e.target.value)}
+                style={{border:`1px solid ${D.border}`,borderRadius:10,padding:"10px 12px",fontSize:15,color:D.text,outline:"none",background:D.card2}}>
                 {LUNI_FULL.map(l=><option key={l} value={l}>{l}</option>)}
               </select>
             </label>
             <label style={{display:"flex",flexDirection:"column",gap:5}}>
-              <span style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.4px"}}>Anul</span>
-              <input type="number" value={manualAn} onChange={e=>setManualAn(e.target.value)}
-                style={{border:"1.5px solid #D1D5DB",borderRadius:10,padding:"10px 12px",fontSize:15,color:"#1A3A5C",outline:"none",background:"#FAFAFA"}}
-                onFocus={e=>e.target.style.border="1.5px solid #2563EB"}
-                onBlur={e=>e.target.style.border="1.5px solid #D1D5DB"}
+              <span style={{fontSize:10,fontWeight:600,color:D.sub,textTransform:"uppercase",letterSpacing:"0.4px"}}>Anul</span>
+              <input type="number" value={an} onChange={e=>setAn(e.target.value)}
+                style={{border:`1px solid ${D.border}`,borderRadius:10,padding:"10px 12px",fontSize:15,color:D.text,outline:"none",background:D.card2}}
+                onFocus={e=>e.target.style.border=`1px solid ${D.blue}`}
+                onBlur={e=>e.target.style.border=`1px solid ${D.border}`}
               />
             </label>
             <label style={{display:"flex",flexDirection:"column",gap:5}}>
-              <span style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.4px"}}>Total de plată (lei)</span>
-              <input type="number" placeholder="ex: 322" value={manualTotal} onChange={e=>setManualTotal(e.target.value)}
-                style={{border:"1.5px solid #D1D5DB",borderRadius:10,padding:"10px 12px",fontSize:18,color:"#1A3A5C",outline:"none",background:"#FAFAFA",fontVariantNumeric:"tabular-nums"}}
-                onFocus={e=>e.target.style.border="1.5px solid #22C55E"}
-                onBlur={e=>e.target.style.border="1.5px solid #D1D5DB"}
+              <span style={{fontSize:10,fontWeight:600,color:D.sub,textTransform:"uppercase",letterSpacing:"0.4px"}}>Total de plată (lei)</span>
+              <input type="number" placeholder="ex: 322" value={total} onChange={e=>setTotal(e.target.value)}
+                style={{border:`1.5px solid ${D.green}66`,borderRadius:10,padding:"12px 12px",fontSize:22,color:D.text,outline:"none",background:D.card2,fontVariantNumeric:"tabular-nums",fontWeight:700}}
+                onFocus={e=>e.target.style.border=`2px solid ${D.green}`}
+                onBlur={e=>e.target.style.border=`1.5px solid ${D.green}66`}
               />
             </label>
-            <button onClick={handleSaveManual} disabled={!manualTotal||saving} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:manualTotal?"linear-gradient(90deg,#22C55E,#16A34A)":"#D1D5DB",color:"#fff",fontSize:15,fontWeight:700,cursor:manualTotal?"pointer":"not-allowed",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            <button onClick={handleSave} disabled={!canSave} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:canSave?"linear-gradient(90deg,#22c55e,#16a34a)":D.card2,color:canSave?"#fff":D.sub,fontSize:15,fontWeight:700,cursor:canSave?"pointer":"not-allowed",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
               {saving?<div className="spinner"/>:saved?"✅ Salvat!":"💾 Salvează"}
             </button>
           </div>
         </div>
       )}
 
-      {mode==="istoric"&&(
+      {view==="istoric"&&(
         <div>
-          <div style={{display:"flex",gap:10,marginBottom:16}}>
-            <div style={{flex:1,background:"linear-gradient(135deg,#1A3A5C,#2563EB)",borderRadius:14,padding:"14px 16px",color:"#fff",textAlign:"center"}}>
-              <div style={{fontSize:11,opacity:0.7,marginBottom:4}}>Total {currentYear}</div>
-              <div style={{fontSize:24,fontWeight:900}}>{totalAnual.toFixed(0)} <span style={{fontSize:13,fontWeight:500}}>lei</span></div>
+          {/* Stats */}
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            <div style={{flex:1,background:"linear-gradient(135deg,#1e3a5f,#1d4ed8)",borderRadius:14,padding:"14px",color:"#fff",textAlign:"center"}}>
+              <div style={{fontSize:10,opacity:0.7,marginBottom:4}}>Total {CY}</div>
+              <div style={{fontSize:22,fontWeight:900}}>{totalAnual.toFixed(0)} <span style={{fontSize:12,fontWeight:500}}>lei</span></div>
             </div>
-            <div style={{flex:1,background:"#fff",borderRadius:14,padding:"14px 16px",border:"1px solid #E5ECF5",textAlign:"center"}}>
-              <div style={{fontSize:11,color:"#6B7280",marginBottom:4}}>Total general</div>
-              <div style={{fontSize:24,fontWeight:900,color:"#1A3A5C"}}>{totalGeneral.toFixed(0)} <span style={{fontSize:13,fontWeight:500,color:"#6B7280"}}>lei</span></div>
+            <div style={{flex:1,background:D.card,borderRadius:14,padding:"14px",border:`1px solid ${D.border}`,textAlign:"center"}}>
+              <div style={{fontSize:10,color:D.sub,marginBottom:4}}>Total general</div>
+              <div style={{fontSize:22,fontWeight:900,color:D.text}}>{totalGeneral.toFixed(0)} <span style={{fontSize:12,fontWeight:500,color:D.sub}}>lei</span></div>
             </div>
           </div>
+
+          {/* Grafic */}
+          <GraficFacturi facturi={facturi}/>
+
+          {/* Lista */}
           {facturi.length===0?(
-            <div style={{textAlign:"center",padding:"40px 20px",color:"#9CA3AF",background:"#fff",borderRadius:16,border:"1.5px dashed #D1D5DB"}}>
-              <div style={{fontSize:40,marginBottom:8}}>🏢</div>
-              <div style={{fontWeight:600}}>Niciun tabel de administrație salvat</div>
+            <div style={{textAlign:"center",padding:"40px 20px",color:D.sub,background:D.card,borderRadius:16,border:`1px dashed ${D.border}`}}>
+              <div style={{fontSize:36,marginBottom:8}}>🏢</div>
+              <div style={{fontWeight:600,color:D.muted}}>Niciun tabel salvat</div>
             </div>
           ):facturi.map(f=>(
-            <div key={f.id} style={{background:"#F8FAFF",borderRadius:14,border:"1px solid #E5ECF5",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",opacity:deletingId===f.id?0.5:1}}>
-              <div>
-                <div style={{fontWeight:700,color:"#1A3A5C",fontSize:14}}>📅 {f.luna}</div>
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:12}}>
-                <span style={{fontSize:20,fontWeight:800,color:"#16A34A",fontVariantNumeric:"tabular-nums"}}>{parseFloat(f.total_plata).toFixed(0)} <span style={{fontSize:13,fontWeight:500,color:"#6B7280"}}>lei</span></span>
-                <button onClick={()=>handleDelete(f.id)} style={{background:"none",border:"none",cursor:"pointer",color:"#D1D5DB",fontSize:17,padding:"2px 5px"}}>✕</button>
+            <div key={f.id} style={{background:D.card,borderRadius:14,border:`1px solid ${D.border}`,padding:"13px 14px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between",opacity:deletingId===f.id?0.4:1}}>
+              <div style={{fontWeight:700,color:D.text,fontSize:13}}>📅 {f.luna}</div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:19,fontWeight:800,color:D.green,fontVariantNumeric:"tabular-nums"}}>{parseFloat(f.total_plata).toFixed(0)} <span style={{fontSize:12,fontWeight:500,color:D.sub}}>lei</span></span>
+                <button onClick={()=>handleDelete(f.id)} style={{background:"none",border:"none",cursor:"pointer",color:D.border,fontSize:16,padding:"2px 4px"}}>✕</button>
               </div>
             </div>
           ))}
@@ -565,8 +444,8 @@ function TabFacturi({ facturi, setFacturi }) {
   );
 }
 
-// ── App ───────────────────────────────────────────────────────
-function App() {
+// ── App ──────────────────────────────────────────────────────
+function App(){
   const [tab,setTab]=useState("apa");
   const [citiri,setCitiri]=useState([]);
   const [facturi,setFacturi]=useState([]);
@@ -575,37 +454,35 @@ function App() {
 
   useEffect(()=>{
     Promise.all([dbLoad("citiri"),dbLoad("facturi")])
-      .then(([c,f])=>{ setCitiri(c); setFacturi(f); })
+      .then(([c,f])=>{setCitiri(c);setFacturi(f);})
       .catch(()=>setError("Nu s-a putut conecta la baza de date."))
       .finally(()=>setLoading(false));
   },[]);
 
-  const TABS=[["apa","💧","Apă"],["facturi","🏢","Tabel Admin"]];
-
-  return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#EFF6FF 0%,#F0F8FF 60%,#E0F2FE 100%)",paddingBottom:80}}>
-      <div style={{background:"linear-gradient(90deg,#1A3A5C,#2563EB)",padding:"env(safe-area-inset-top,20px) 20px 22px",textAlign:"center",color:"#fff",boxShadow:"0 4px 20px rgba(26,58,92,0.2)"}}>
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,marginBottom:4}}>
-          <span style={{fontSize:28}}>🏠</span>
-          <h1 style={{margin:0,fontSize:20,fontWeight:800,letterSpacing:"-0.5px"}}>Admin Apartament 4</h1>
+  return(
+    <div style={{minHeight:"100vh",background:D.bg,paddingBottom:80}}>
+      <div style={{background:D.header,padding:"env(safe-area-inset-top,20px) 20px 20px",textAlign:"center",color:"#fff",boxShadow:"0 4px 20px rgba(0,0,0,0.4)"}}>
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,marginBottom:3}}>
+          <span style={{fontSize:26}}>🏠</span>
+          <h1 style={{margin:0,fontSize:19,fontWeight:800,letterSpacing:"-0.5px"}}>Admin Apartament 4</h1>
         </div>
-        <p style={{margin:0,opacity:0.7,fontSize:12}}>Florescu • Str. Mrs. C-tin Prezan</p>
+        <p style={{margin:0,opacity:0.6,fontSize:11}}>Florescu • Str. Mrs. C-tin Prezan</p>
       </div>
 
-      {error&&<div style={{background:"#FEE2E2",color:"#991B1B",padding:"10px 16px",fontSize:13,textAlign:"center",fontWeight:600}}>⚠️ {error}</div>}
+      {error&&<div style={{background:"#ef444420",color:"#fca5a5",padding:"10px 16px",fontSize:13,textAlign:"center",fontWeight:600}}>⚠️ {error}</div>}
 
-      <div style={{maxWidth:680,margin:"0 auto",padding:"20px 14px 0"}}>
+      <div style={{maxWidth:680,margin:"0 auto",padding:"18px 14px 0"}}>
         {loading?(
-          <div style={{textAlign:"center",padding:"60px 20px",color:"#6B7280"}}>
-            <div style={{fontSize:40,marginBottom:12}} className="pulse">🏠</div>
-            <div style={{fontWeight:600}}>Se încarcă datele...</div>
+          <div style={{textAlign:"center",padding:"60px 20px",color:D.sub}}>
+            <div style={{fontSize:36,marginBottom:10}} className="pulse">🏠</div>
+            <div style={{fontWeight:600,color:D.muted}}>Se încarcă datele...</div>
           </div>
         ):(
           <>
-            <div style={{display:"flex",gap:10,marginBottom:22,background:"#fff",borderRadius:16,padding:6,boxShadow:"0 2px 12px rgba(26,58,92,0.07)"}}>
-              {TABS.map(([id,emoji,lbl])=>(
-                <button key={id} onClick={()=>setTab(id)} style={{flex:1,padding:"11px 8px",borderRadius:12,border:"none",background:tab===id?"linear-gradient(135deg,#1A3A5C,#2563EB)":"transparent",color:tab===id?"#fff":"#6B7280",fontWeight:700,fontSize:14,cursor:"pointer",transition:"all 0.2s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                  <span>{emoji}</span> {lbl}
+            <div style={{display:"flex",gap:8,marginBottom:20,background:D.card,borderRadius:16,padding:5,border:`1px solid ${D.border}`}}>
+              {[["apa","💧","Apă"],["facturi","🏢","Tabel Admin"]].map(([id,emoji,lbl])=>(
+                <button key={id} onClick={()=>setTab(id)} style={{flex:1,padding:"10px 8px",borderRadius:12,border:"none",background:tab===id?D.blue:"transparent",color:tab===id?"#fff":D.sub,fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  <span>{emoji}</span>{lbl}
                 </button>
               ))}
             </div>
