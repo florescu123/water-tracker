@@ -415,7 +415,7 @@ function TabFacturi({ facturi, setFacturi }) {
       {mode==="scan"&&(
         <div>
           <div style={{background:"#fff",borderRadius:18,padding:"24px 20px",border:"2px dashed #BFDBFE",textAlign:"center",marginBottom:16,cursor:"pointer"}} onClick={()=>fileRef.current&&fileRef.current.click()}>
-            <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+            <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
             {scanning?(
               <div>
                 <div style={{fontSize:40,marginBottom:10}} className="pulse">🔍</div>
