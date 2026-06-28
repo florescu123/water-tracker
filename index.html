@@ -145,9 +145,10 @@ function MonthPicker({ selectedMonth, selectedYear, onChange, history, historyKe
 }
 
 // ── WaterCard ─────────────────────────────────────────────────
-function WaterCard({ label, emoji, vechi, nou, onChange, color }) {
-  const consum=nou!==""&&vechi!==""?(parseFloat(nou)-parseFloat(vechi)).toFixed(3):null;
-  const consumOk=consum!==null&&!isNaN(consum)&&parseFloat(consum)>=0;
+function WaterCard({ label, emoji, vechi, nou, onChangeNou, color }) {
+  const consum = nou !== "" && vechi !== "" ? (parseFloat(nou) - parseFloat(vechi)).toFixed(0) : null;
+  const consumOk = consum !== null && !isNaN(consum) && parseFloat(consum) >= 0;
+  const hasVechi = vechi !== "" && vechi !== null && vechi !== undefined;
   return (
     <div style={{background:"#fff",borderRadius:18,boxShadow:"0 4px 20px rgba(26,58,92,0.09)",padding:"20px 18px",flex:1,minWidth:140,border:`2px solid ${color}22`,position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:-16,right:-16,width:70,height:70,borderRadius:"50%",background:`${color}15`,pointerEvents:"none"}}/>
@@ -158,28 +159,37 @@ function WaterCard({ label, emoji, vechi, nou, onChange, color }) {
           <div style={{fontSize:11,color:"#6B7280"}}>Index contor apă</div>
         </div>
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {[["vechi","Index vechi (m³)","ex: 123"],["nou","Index nou (m³)","ex: 125"]].map(([field,lbl,ph])=>(
-          <label key={field} style={{display:"flex",flexDirection:"column",gap:4}}>
-            <span style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.4px"}}>{lbl}</span>
-            <input type="number" step="0.001" min="0" placeholder={ph}
-              value={field==="vechi"?vechi:nou}
-              onChange={e=>onChange(field,e.target.value)}
-              style={{border:"1.5px solid #D1D5DB",borderRadius:10,padding:"10px 12px",fontSize:18,color:"#1A3A5C",outline:"none",fontVariantNumeric:"tabular-nums",background:"#FAFAFA",width:"100%"}}
-              onFocus={e=>e.target.style.border=`1.5px solid ${color}`}
-              onBlur={e=>e.target.style.border="1.5px solid #D1D5DB"}
-            />
-          </label>
-        ))}
+
+      {/* Index vechi - readonly, din ultima citire */}
+      <div style={{marginBottom:10,background:"#F8FAFF",borderRadius:10,padding:"10px 12px",border:"1px solid #E5ECF5"}}>
+        <div style={{fontSize:11,fontWeight:600,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:4}}>Index vechi (m³)</div>
+        {hasVechi ? (
+          <div style={{fontSize:20,fontWeight:700,color:"#1A3A5C",fontVariantNumeric:"tabular-nums"}}>{parseInt(parseFloat(vechi))}</div>
+        ) : (
+          <div style={{fontSize:13,color:"#C4B5A0",fontStyle:"italic"}}>Prima citire</div>
+        )}
       </div>
-      {consumOk&&(
+
+      {/* Index nou - singurul câmp de introdus */}
+      <label style={{display:"flex",flexDirection:"column",gap:4}}>
+        <span style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.4px"}}>Index nou (m³)</span>
+        <input type="number" step="0.001" min="0" placeholder="ex: 125"
+          value={nou}
+          onChange={e=>onChangeNou(e.target.value)}
+          style={{border:`1.5px solid ${color}66`,borderRadius:10,padding:"12px 12px",fontSize:20,color:"#1A3A5C",outline:"none",fontVariantNumeric:"tabular-nums",background:"#FAFAFA",width:"100%",fontWeight:700}}
+          onFocus={e=>e.target.style.border=`2px solid ${color}`}
+          onBlur={e=>e.target.style.border=`1.5px solid ${color}66`}
+        />
+      </label>
+
+      {consumOk && (
         <div style={{marginTop:12,background:`${color}12`,borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",border:`1px solid ${color}25`}}>
           <div style={{display:"flex",alignItems:"center",gap:6,color}}><DropIcon/><span style={{fontSize:12,fontWeight:600}}>Consum</span></div>
           <span style={{fontSize:20,fontWeight:800,color,fontVariantNumeric:"tabular-nums"}}>{consum} <span style={{fontSize:12,fontWeight:500}}>m³</span></span>
         </div>
       )}
-      {consum!==null&&!isNaN(consum)&&parseFloat(consum)<0&&(
-        <div style={{marginTop:10,color:"#EF4444",fontSize:12,background:"#FEE2E2",borderRadius:8,padding:"7px 10px"}}>⚠️ Indexul nou trebuie să fie mai mare.</div>
+      {consum !== null && !isNaN(consum) && parseFloat(consum) < 0 && (
+        <div style={{marginTop:10,color:"#EF4444",fontSize:12,background:"#FEE2E2",borderRadius:8,padding:"7px 10px"}}>⚠️ Indexul nou trebuie să fie mai mare decât {parseFloat(vechi).toFixed(0)}.</div>
       )}
     </div>
   );
@@ -189,47 +199,54 @@ function WaterCard({ label, emoji, vechi, nou, onChange, color }) {
 function TabApa({ citiri, setCitiri }) {
   const [selMonth,setSelMonth]=useState(currentMonth);
   const [selYear,setSelYear]=useState(currentYear);
-  const [form,setForm]=useState(getInitialForm(currentMonth,currentYear));
+  const [bucNou,setBucNou]=useState("");
+  const [baieNou,setBaieNou]=useState("");
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState(false);
   const [error,setError]=useState(null);
   const [deletingId,setDeletingId]=useState(null);
-  const [view,setView]=useState("introduce"); // introduce | istoric
+  const [view,setView]=useState("introduce");
+
+  // Ultimul index salvat pentru fiecare contor
+  const lastBuc  = citiri.length > 0 ? String(citiri[citiri.length-1].bucatarie_nou) : "";
+  const lastBaie = citiri.length > 0 ? String(citiri[citiri.length-1].baie_nou) : "";
 
   const handleMonthChange=(month,year)=>{
-    setSelMonth(month);setSelYear(year);
-    const ex=citiri.find(e=>e.luna_index===month&&e.an===year);
-    setForm(ex?{bucatarie_vechi:String(ex.bucatarie_vechi),bucatarie_nou:String(ex.bucatarie_nou),baie_vechi:String(ex.baie_vechi),baie_nou:String(ex.baie_nou),luna:ex.luna,luna_index:ex.luna_index,an:ex.an,data:ex.data||""}:getInitialForm(month,year));
+    setSelMonth(month); setSelYear(year);
+    setBucNou(""); setBaieNou("");
   };
-  const handleChange=(loc,field,val)=>setForm(f=>({...f,[`${loc}_${field}`]:val}));
-  const consumBuc=form.bucatarie_nou&&form.bucatarie_vechi?parseFloat(form.bucatarie_nou)-parseFloat(form.bucatarie_vechi):null;
-  const consumBaie=form.baie_nou&&form.baie_vechi?parseFloat(form.baie_nou)-parseFloat(form.baie_vechi):null;
-  const totalConsum=consumBuc!==null&&consumBaie!==null&&consumBuc>=0&&consumBaie>=0?(consumBuc+consumBaie).toFixed(0):null;
-  const canSave=totalConsum!==null&&!saving;
+  const consumBuc  = bucNou !== "" && lastBuc  !== "" ? parseFloat(bucNou)  - parseFloat(lastBuc)  : null;
+  const consumBaie = baieNou !== "" && lastBaie !== "" ? parseFloat(baieNou) - parseFloat(lastBaie) : null;
+  const totalConsum = consumBuc !== null && consumBaie !== null && consumBuc >= 0 && consumBaie >= 0 ? (consumBuc + consumBaie).toFixed(0) : null;
+  const canSave = totalConsum !== null && !saving;
 
-  const handleSave=async()=>{
-    if(!canSave)return;
-    setSaving(true);setError(null);
+  const handleSave = async () => {
+    if (!canSave) return;
+    setSaving(true); setError(null);
     try {
-      const row={data:form.data||`${LUNI_FULL[selMonth]} ${selYear}`,luna:form.data||`${LUNI_FULL[selMonth]} ${selYear}`,luna_index:selMonth,an:selYear,bucatarie_vechi:parseFloat(form.bucatarie_vechi),bucatarie_nou:parseFloat(form.bucatarie_nou),baie_vechi:parseFloat(form.baie_vechi),baie_nou:parseFloat(form.baie_nou)};
-      const saved_row=await dbInsert("citiri",row);
-      setCitiri(h=>[...h,saved_row].sort((a,b)=>a.an-b.an||a.luna_index-b.luna_index));
-      setSaved(true);setTimeout(()=>setSaved(false),2500);
-      setForm(getInitialForm(selMonth,selYear));
-    } catch(e){setError("Eroare la salvare.");}
-    finally{setSaving(false);}
-  };
-  const handleDelete=async(id)=>{
-    setDeletingId(id);
-    try{await dbDelete("citiri",id);setCitiri(h=>h.filter(e=>e.id!==id));}
-    catch(e){setError("Eroare la ștergere.");}
-    finally{setDeletingId(null);}
+      const luna = `${LUNI_FULL[selMonth]} ${selYear}`;
+      const row = { data:luna, luna, luna_index:selMonth, an:selYear,
+        bucatarie_vechi: parseFloat(lastBuc)||0, bucatarie_nou: parseFloat(bucNou),
+        baie_vechi: parseFloat(lastBaie)||0, baie_nou: parseFloat(baieNou) };
+      const saved_row = await dbInsert("citiri", row);
+      setCitiri(h => [...h, saved_row].sort((a,b) => a.an-b.an||a.luna_index-b.luna_index));
+      setSaved(true); setTimeout(()=>setSaved(false), 2500);
+      setBucNou(""); setBaieNou("");
+    } catch(e) { setError("Eroare la salvare."); }
+    finally { setSaving(false); }
   };
 
-  const totalCum=citiri.reduce((acc,e)=>acc+calcConsum(e),0);
-  const avg=citiri.length>0?totalCum/citiri.length:0;
+  const handleDelete = async (id) => {
+    setDeletingId(id);
+    try { await dbDelete("citiri",id); setCitiri(h=>h.filter(e=>e.id!==id)); }
+    catch(e) { setError("Eroare la ștergere."); }
+    finally { setDeletingId(null); }
+  };
+
+  const totalCum = citiri.reduce((acc,e)=>acc+calcConsum(e),0);
+  const avg = citiri.length>0 ? totalCum/citiri.length : 0;
   let running=0;
-  const withCumul=citiri.map(e=>{running+=calcConsum(e);return{...e,cumulative:running};});
+  const withCumul = citiri.map(e=>{running+=calcConsum(e);return{...e,cumulative:running};});
 
   return (
     <div>
@@ -250,8 +267,8 @@ function TabApa({ citiri, setCitiri }) {
             📌 {LUNI_FULL[selMonth]} {selYear}
           </div>
           <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:16}}>
-            <WaterCard label="Bucătărie" emoji="🍽️" color="#4A9CC4" vechi={form.bucatarie_vechi} nou={form.bucatarie_nou} onChange={(f,v)=>handleChange("bucatarie",f,v)}/>
-            <WaterCard label="Baie" emoji="🛁" color="#22C55E" vechi={form.baie_vechi} nou={form.baie_nou} onChange={(f,v)=>handleChange("baie",f,v)}/>
+            <WaterCard label="Bucătărie" emoji="🍽️" color="#4A9CC4" vechi={lastBuc} nou={bucNou} onChangeNou={v=>setBucNou(v)}/>
+            <WaterCard label="Baie" emoji="🛁" color="#22C55E" vechi={lastBaie} nou={baieNou} onChangeNou={v=>setBaieNou(v)}/>
           </div>
           {totalConsum&&(
             <div style={{background:"linear-gradient(90deg,#1A3A5C,#2563EB)",borderRadius:14,padding:"16px 20px",color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,marginBottom:14}}>
@@ -336,6 +353,7 @@ function TabApa({ citiri, setCitiri }) {
 // ── Tab Tabel ───────────────────────────────────────────────
 function TabFacturi({ facturi, setFacturi }) {
   const fileRef=useRef();
+  const cameraRef=useRef();
   const [scanning,setScanning]=useState(false);
   const [scanResult,setScanResult]=useState(null);
   const [saving,setSaving]=useState(false);
@@ -358,7 +376,7 @@ function TabFacturi({ facturi, setFacturi }) {
         r.readAsDataURL(file);
       });
       const mediaType=file.type||"image/jpeg";
-      const result=await scanFactura(base64,mediaType);
+
       setScanResult(result);
     } catch(e){ setError("Nu am putut citi tabelul. Încearcă o poză mai clară sau adaugă manual."); }
     finally{ setScanning(false); }
@@ -414,25 +432,32 @@ function TabFacturi({ facturi, setFacturi }) {
 
       {mode==="scan"&&(
         <div>
-          <div style={{background:"#fff",borderRadius:18,padding:"24px 20px",border:"2px dashed #BFDBFE",textAlign:"center",marginBottom:16,cursor:"pointer"}} onClick={()=>fileRef.current&&fileRef.current.click()}>
-            <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
-            {scanning?(
-              <div>
-                <div style={{fontSize:40,marginBottom:10}} className="pulse">🔍</div>
-                <div style={{fontWeight:700,color:"#1A3A5C",marginBottom:4}}>Se analizează tabelul...</div>
-                <div style={{fontSize:13,color:"#6B7280"}}>Claude citește automat datele pentru Ap. 4</div>
+          <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+
+          {scanning?(
+            <div style={{background:"#fff",borderRadius:18,padding:"32px 20px",border:"2px dashed #BFDBFE",textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:40,marginBottom:10}} className="pulse">🔍</div>
+              <div style={{fontWeight:700,color:"#1A3A5C",marginBottom:4}}>Se analizează tabelul...</div>
+              <div style={{fontSize:13,color:"#6B7280"}}>Claude citește automat datele pentru Ap. 4</div>
+            </div>
+          ):(
+            <div style={{marginBottom:16}}>
+              <div style={{fontWeight:600,color:"#6B7280",fontSize:12,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:10}}>📷 Alege sursa imaginii</div>
+              <div style={{display:"flex",gap:12}}>
+                <button onClick={()=>cameraRef.current&&cameraRef.current.click()} style={{flex:1,background:"linear-gradient(135deg,#1A3A5C,#2563EB)",border:"none",borderRadius:16,padding:"20px 12px",color:"#fff",cursor:"pointer",textAlign:"center"}}>
+                  <div style={{fontSize:36,marginBottom:8}}>📸</div>
+                  <div style={{fontWeight:700,fontSize:14}}>Fă poză</div>
+                  <div style={{fontSize:11,opacity:0.75,marginTop:3}}>Deschide camera</div>
+                </button>
+                <button onClick={()=>fileRef.current&&fileRef.current.click()} style={{flex:1,background:"linear-gradient(135deg,#0F766E,#0D9488)",border:"none",borderRadius:16,padding:"20px 12px",color:"#fff",cursor:"pointer",textAlign:"center"}}>
+                  <div style={{fontSize:36,marginBottom:8}}>🖼️</div>
+                  <div style={{fontWeight:700,fontSize:14}}>Din galerie</div>
+                  <div style={{fontSize:11,opacity:0.75,marginTop:3}}>Alege o poză salvată</div>
+                </button>
               </div>
-            ):(
-              <div>
-                <div style={{fontSize:48,marginBottom:10}}>📸</div>
-                <div style={{fontWeight:700,color:"#1A3A5C",fontSize:16,marginBottom:6}}>Fotografiază tabelul de administrație</div>
-                <div style={{fontSize:13,color:"#6B7280"}}>Atinge pentru a face poză sau alege din galerie</div>
-                <div style={{marginTop:12,background:"#EFF6FF",borderRadius:10,padding:"8px 14px",display:"inline-block",fontSize:12,color:"#2563EB",fontWeight:600}}>
-                  📱 Deschide Camera
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {scanResult&&(
             <div style={{background:"#fff",borderRadius:16,padding:"20px",border:"2px solid #22C55E33",marginBottom:16}}>
